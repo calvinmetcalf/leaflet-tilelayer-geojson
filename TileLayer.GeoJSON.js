@@ -98,7 +98,7 @@ L.TileLayer.GeoJSON = L.TileLayer.extend({
             this._uniqueKeys = {};
         }
         var tile,t,len1;
-        for (t,len1=this._tiles.length;t<len1;t++) {
+        for (t=0,len1=this._tiles.length;t<len1;t++) {
             tile = this._tiles[t];
             if (!tile.processed) {
                 this._data = this._data.concat(tile.datum);
@@ -106,13 +106,13 @@ L.TileLayer.GeoJSON = L.TileLayer.extend({
             }
         }
         var tileData= this._data,tileDatum,f,len2,featureKey;
-        for (t,len1=tileData.length;t<len1;t++) {
+        for (t=0,len1=tileData.length;t<len1;t++) {
             tileDatum = tileData[t];
             if (tileDatum && tileDatum.features) {
 
                 // deduplicate features by using the string result of the unique function
                 if (this.options.unique) {
-                    for (f,len2=tileDatum.features.length;f<len2;f++) {
+                    for (f=0,len2=tileDatum.features.length;f<len2;f++) {
                         featureKey = this.options.unique(tileDatum.features[f]);
                         if (this._uniqueKeys.hasOwnProperty(featureKey)) {
                             delete tileDatum.features[f];
@@ -147,7 +147,8 @@ L.TileLayer.GeoJSON = L.TileLayer.extend({
         this._geojson.features = [];
         this._data = [];
         L.TileLayer.prototype._resetCallback.apply(this, arguments);
-        for (var i in this._requests) {
+        var i,len;
+        for (i=0,len=this._requests.length;i<len;i++) {
             this._requests[i].abort();
         }
         this._requests = [];
