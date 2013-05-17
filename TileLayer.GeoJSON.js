@@ -1,6 +1,6 @@
 L.Util.ajax = function (url,options, cb) {
     var cbName,ourl,cbSuffix,scriptNode, head, cbParam, XMHreq;
-	if(typeof options === "function"){
+    if(typeof options === "function"){
 		cb = options;
 		options = {};
 	}
@@ -28,11 +28,15 @@ L.Util.ajax = function (url,options, cb) {
 			ourl =  url+"&"+cbParam+"="+cbName;
 		}
 		scriptNode.src = ourl;
-		return {abort:function(){head.removeChild(scriptNode);
-    			delete L.Util.ajax.cb[cbSuffix];
-                return true
-            }
-        }
+		return {
+            abort:function(){
+    		    L.Util.ajax.cb[cbSuffix]=function(){
+                    head.removeChild(scriptNode);
+    			    delete L.Util.ajax.cb[cbSuffix];
+                    return true;
+                };
+		    }
+		};
 	}else{	
 		// the following is from JavaScript: The Definitive Guide
 		if (window.XMLHttpRequest === undefined) {
@@ -77,89 +81,52 @@ L.TileLayer.GeoJSON = L.TileLayer.extend({
         if(options.jsonp){
             this.jsonp=true;
         }
+        options.unloadInvisibleTiles =true;
         L.TileLayer.prototype.initialize.call(this, url, options);
-        this.geojsonLayer = new L.GeoJSON(this._geojson, geojsonOptions);
+        this.geojsonLayer = L.featureGroup([], geojsonOptions);
         this.geojsonOptions = geojsonOptions;
     },
      onAdd: function (map) {
         this._map = map;
         L.TileLayer.prototype.onAdd.call(this, map);
-        this.on('load', this._tilesLoaded);
         map.addLayer(this.geojsonLayer);
     },
     onRemove: function (map) {
         map.removeLayer(this.geojsonLayer);
-        this.off('load', this._tilesLoaded);
         L.TileLayer.prototype.onRemove.call(this, map);
     },
-    data: function () {
-         this._geojson.features = [];
-        if (this.options.unique) {
-            this._uniqueKeys = {};
-        }
-        var tile,t,len1;
-        for (t in this._tiles) {
-            tile = this._tiles[t];
-            if (!tile.processed) {
-                this._data = this._data.concat(tile.datum);
-                tile.processed = true;
-            }
-        }
-        var tileData= this._data,tileDatum,f,len2,featureKey;
-        for (t=0,len1=tileData.length;t<len1;t++) {
-            tileDatum = tileData[t];
-            if (tileDatum && tileDatum.features) {
-
-                // deduplicate features by using the string result of the unique function
-                if (this.options.unique) {
-                    for (f=0,len2=tileDatum.features.length;f<len2;f++) {
-                        featureKey = this.options.unique(tileDatum.features[f]);
-                        if (this._uniqueKeys.hasOwnProperty(featureKey)) {
-                            delete tileDatum.features[f];
-                        }
-                        else {
-                            this._uniqueKeys[featureKey] = featureKey;
-                        }
-                    }
-                }
-                this._geojson.features =
-                    this._geojson.features.concat(tileDatum.features);
-            }
-        }
-        return this._geojson;
-    },
     _addTile: function(tilePoint, container) {
-        var tile = { datum: null, processed: false };
-        this._tiles[tilePoint.x + ':' + tilePoint.y] = tile;
+        var tile = { datum: null, processed: false, id : tilePoint.x + ':' + tilePoint.y};
+        this._tiles[tile.id] = tile;
         this._loadTile(tile, tilePoint);
     },
     // Load the requested tile via AJAX
     _loadTile: function (tile, tilePoint) {
         this._adjustTilePoint(tilePoint);
-        var layer = this;
-        var req = L.Util.ajax(this.getTileUrl(tilePoint),{jsonp:this.jsonp},function(data){
+        
+        tile._layer  = this;
+        tile.onload  = this._tileOnLoad;
+     	var _reqs = this._requests;
+        var len = _reqs.length
+        this._requests[len]=L.Util.ajax(this.getTileUrl(tilePoint),{jsonp:this.jsonp},function(data){
             tile.datum=data;
-            layer._tileLoaded();
+            tile.onload();
+            _reqs[len]=false;
         });
-        this._requests.push(req);
-    },
-    _resetCallback: function() {
-        this._geojson.features = [];
-        this._data = [];
-        L.TileLayer.prototype._resetCallback.apply(this, arguments);
-        var i,len;
-        for (i=0,len=this._requests.length;i<len;i++) {
-            this._requests[i].abort();
-        }
-        this._requests = [];
-    },
+    },    
     _update: function() {
         if (this._map._panTransition && this._map._panTransition._inProgress) { return; }
         if (this._tilesToLoad < 0) this._tilesToLoad = 0;
+        
         L.TileLayer.prototype._update.apply(this, arguments);
     },
-    _tilesLoaded: function (evt) {
-        this.geojsonLayer.clearLayers().addData(this.data());
+    _removeTile: function (id) {
+        this.geojsonLayer.removeLayer(this._tiles[id]._jsonLayer);
+        delete this._tiles[id];
+    },
+    _tileOnLoad: function (e) {
+    		this._jsonLayer = L.geoJson(this.datum,this._layer.geojsonOptions);
+    		this._layer.geojsonLayer.addLayer(this._jsonLayer);
     }
 });
 L.tileLayer.geoJson=function(a,b,c){
