@@ -98,7 +98,7 @@ L.TileLayer.GeoJSON = L.TileLayer.extend({
             this._uniqueKeys = {};
         }
         var tile,t,len1;
-        for (t=0,len1=this._tiles.length;t<len1;t++) {
+        for (t in this._tiles) {
             tile = this._tiles[t];
             if (!tile.processed) {
                 this._data = this._data.concat(tile.datum);
@@ -159,8 +159,7 @@ L.TileLayer.GeoJSON = L.TileLayer.extend({
         L.TileLayer.prototype._update.apply(this, arguments);
     },
     _tilesLoaded: function (evt) {
-        this.geojsonLayer.clearLayers();
-        this.data();
+        this.geojsonLayer.clearLayers().addData(this.data());
     }
 });
 L.tileLayer.geoJson=function(a,b,c){
