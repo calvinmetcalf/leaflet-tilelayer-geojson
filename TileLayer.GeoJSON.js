@@ -97,22 +97,22 @@ L.TileLayer.GeoJSON = L.TileLayer.extend({
         if (this.options.unique) {
             this._uniqueKeys = {};
         }
-        var tile;
-        for (var t in this._tiles) {
+        var tile,t,len1;
+        for (t,len1=this._tiles.length;t<len1;t++) {
             tile = this._tiles[t];
             if (!tile.processed) {
                 this._data = this._data.concat(tile.datum);
                 tile.processed = true;
             }
         }
-        var tileData= this._data,tileDatum,f,t,featureKey;
-        for (t in tileData) {
+        var tileData= this._data,tileDatum,f,len2,featureKey;
+        for (t,len1=tileData.length;t<len1;t++) {
             tileDatum = tileData[t];
             if (tileDatum && tileDatum.features) {
 
                 // deduplicate features by using the string result of the unique function
                 if (this.options.unique) {
-                    for (f in tileDatum.features) {
+                    for (f,len2=tileDatum.features.length;f<len2;f++) {
                         featureKey = this.options.unique(tileDatum.features[f]);
                         if (this._uniqueKeys.hasOwnProperty(featureKey)) {
                             delete tileDatum.features[f];
