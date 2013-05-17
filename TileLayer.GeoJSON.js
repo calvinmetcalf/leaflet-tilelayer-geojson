@@ -97,23 +97,23 @@ L.TileLayer.GeoJSON = L.TileLayer.extend({
         if (this.options.unique) {
             this._uniqueKeys = {};
         }
-        
+        var tile;
         for (var t in this._tiles) {
-            var tile = this._tiles[t];
+            tile = this._tiles[t];
             if (!tile.processed) {
                 this._data = this._data.concat(tile.datum);
                 tile.processed = true;
             }
         }
-        var tileData= this._data;
-        for (var t in tileData) {
-            var tileDatum = tileData[t];
+        var tileData= this._data,tileDatum,f,t,featureKey;
+        for (t in tileData) {
+            tileDatum = tileData[t];
             if (tileDatum && tileDatum.features) {
 
                 // deduplicate features by using the string result of the unique function
                 if (this.options.unique) {
-                    for (var f in tileDatum.features) {
-                        var featureKey = this.options.unique(tileDatum.features[f]);
+                    for (f in tileDatum.features) {
+                        featureKey = this.options.unique(tileDatum.features[f]);
                         if (this._uniqueKeys.hasOwnProperty(featureKey)) {
                             delete tileDatum.features[f];
                         }
@@ -158,7 +158,8 @@ L.TileLayer.GeoJSON = L.TileLayer.extend({
         L.TileLayer.prototype._update.apply(this, arguments);
     },
     _tilesLoaded: function (evt) {
-        this.geojsonLayer.clearLayers().addData(this.data());
+        this.geojsonLayer.clearLayers();
+        this.data();
     }
 });
 L.tileLayer.geoJson=function(a,b,c){
