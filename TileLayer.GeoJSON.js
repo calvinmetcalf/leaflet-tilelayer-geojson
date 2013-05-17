@@ -106,7 +106,7 @@ L.TileLayer.GeoJSON = L.TileLayer.extend({
         
         tile._layer  = this;
         tile.onload  = this._tileOnLoad;
-     	var _reqs = this._requests;
+         var _reqs = this._requests;
         var len = _reqs.length
         this._requests[len]=L.Util.ajax(this.getTileUrl(tilePoint),{jsonp:this.jsonp},function(data){
             tile.datum=data;
@@ -121,8 +121,13 @@ L.TileLayer.GeoJSON = L.TileLayer.extend({
         L.TileLayer.prototype._update.apply(this, arguments);
     },
     _removeTile: function (id) {
-        this.geojsonLayer.removeLayer(this._tiles[id]._jsonLayer);
-        delete this._tiles[id];
+    	if(id in this._tiles){
+    		if(this._tiles[id]._jsonLayer&&this.geojsonLayer){
+    			this.geojsonLayer.removeLayer(this._tiles[id]._jsonLayer);
+    		}
+        	delete this._tiles[id];
+    	}
+
     },
     _tileOnLoad: function (e) {
     		this._jsonLayer = L.geoJson(this.datum,this._layer.geojsonOptions);
